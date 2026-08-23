@@ -10,8 +10,7 @@ import (
 )
 
 func main() {
-	err := godotenv.Load()
-	if err != nil {
+	if err := godotenv.Load(".env"); err != nil && !os.IsNotExist(err) {
 		slog.Error("Error loading .env file", "error", err)
 		os.Exit(1)
 	}

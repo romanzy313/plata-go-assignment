@@ -6,7 +6,6 @@ import (
 	"os"
 
 	"github.com/joho/godotenv"
-	"github.com/labstack/echo/v5"
 )
 
 func main() {
@@ -15,12 +14,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	e := echo.New()
-	e.Logger = slog.Default()
-
-	e.GET("/health", func(c *echo.Context) error {
-		return c.String(200, "OK")
-	})
+	deps := &handler{
+		exchangeRateClient: nil,
+		apiDatabase:        nil,
+	}
+	e := newHTTPServer(deps)
 
 	e.Start(fmt.Sprintf(":%s", os.Getenv("PORT")))
 }

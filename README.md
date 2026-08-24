@@ -12,6 +12,7 @@
 ## Libraries
 
 - Http server: Echo
+- Http requests [resty](https://github.com/go-resty/resty/blob/v2/README.md)
 
 ## Resources:
 
@@ -20,7 +21,6 @@
 ## TODO
 
 - Application config
-- exchangeratesapi.io client
 - Database implementation
 - Background worker (pseudo cron)
 - Failure state on the update

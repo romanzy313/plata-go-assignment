@@ -6,10 +6,11 @@ import (
 )
 
 type exchangeRateClient interface {
-	latestSnapshot(ctx context.Context, symbols []string) (rateSnapshot, error)
+	latestSnapshot(ctx context.Context, base string, symbols []string) (*rateSnapshot, error)
 }
 
 type rateSnapshot struct {
+	Base      string
 	Rates     map[string]float64
 	UpdatedAt time.Time
 }

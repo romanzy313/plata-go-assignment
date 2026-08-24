@@ -12,13 +12,13 @@ func main() {
 		slog.Error("Error reading config", "error", err)
 		os.Exit(1)
 	}
-	var _ = cfg
+	rateClient := newExchangeratesapiClient(cfg.ExchangeratesapiKey)
 
-	deps := &handler{
-		exchangeRateClient: nil,
+	handler := &handler{
+		exchangeRateClient: rateClient,
 		apiDatabase:        nil,
 	}
-	e := newHTTPServer(deps)
+	e := newHTTPServer(handler)
 
 	e.Start(fmt.Sprintf(":%d", cfg.Port))
 }

@@ -39,6 +39,10 @@ func newHTTPServer(h *handler) *echo.Echo {
 	e.POST("/update", h.update)
 	e.GET("/quote/latest", h.getLatest)
 	e.GET("/quote/:updateId", h.getByUpdateId)
+
+	// ugly and quick integration tests
+	e.GET("/test/api", h.testApi)
+
 	return e
 }
 
@@ -131,4 +135,14 @@ func (h *handler) getByUpdateId(c *echo.Context) error {
 		Price:     update.Price,
 		UpdatedAt: update.UpdatedAt.UTC().Format(time.RFC3339),
 	})
+}
+
+func (h *handler) testApi(c *echo.Context) error {
+	snapshot, err := h.exchangeRateClient.latestSnapshot(
+		c.Request().Context(), "EUR", []string{"USD", "MXN"})
+	slog.Info("api test", "snapshot", snapshot, "err", err)
+	if err != nil {
+		return c.String(http.StatusInternalServerError, "not ok")
+	}
+	return c.String(http.StatusOK, "ok")
 }

@@ -105,7 +105,7 @@ func (h *handler) getLatest(c *echo.Context) error {
 
 	return c.JSON(http.StatusOK, rateResponse{
 		UpdateId:  update.Id,
-		Status:    update.Status,
+		Status:    update.Status.String(),
 		Price:     update.Price,
 		UpdatedAt: update.UpdatedAt.UTC().Format(time.RFC3339),
 	})
@@ -131,7 +131,7 @@ func (h *handler) getByUpdateId(c *echo.Context) error {
 
 	return c.JSON(http.StatusOK, rateResponse{
 		UpdateId:  update.Id,
-		Status:    update.Status,
+		Status:    update.Status.String(),
 		Price:     update.Price,
 		UpdatedAt: update.UpdatedAt.UTC().Format(time.RFC3339),
 	})

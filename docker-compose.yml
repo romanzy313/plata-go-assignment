@@ -1,8 +1,31 @@
 services:
+  plata-postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: plata
+      POSTGRES_USER: plata
+      POSTGRES_PASSWORD: plata
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U plata -d plata"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
   plata-assignment:
     build: .
     environment:
-      PORT: 3000
+      DATABASE_URL: postgres://plata:plata@plata-postgres:5432/plata?sslmode=disable
+      EXCHANGERATESAPI_KEY: ${EXCHANGERATESAPI_KEY}
+      WORKER_POLL_INTERVAL: ${WORKER_POLL_INTERVAL}
+      PORT: ${PORT}
+    depends_on:
+      plata-postgres:
+        condition: service_healthy
     ports:
       - "3000:3000"
     restart: unless-stopped
+
+volumes:
+  postgres-data:

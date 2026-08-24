@@ -12,19 +12,32 @@ type apiDatabase interface {
 }
 
 type workerDatabase interface {
+	// returns updates that have a "pending" status
 	getPendingUpdates(ctx context.Context) ([]*pendingUpdate, error)
 	completeUpdates(ctx context.Context, updates []*completeUpdate) error
+	failUpdates(ctx context.Context, updateIds []string) error
 }
 
-// TODO: idempotency
-// TODO: error handling...
+type updateStatus string
+
+const (
+	updateStatusPending   updateStatus = "pending"
+	updateStatusCompleted updateStatus = "completed"
+	updateStatusFailed    updateStatus = "failed"
+)
+
+func (s updateStatus) String() string {
+	return string(s)
+}
+
 type update struct {
-	Id        string
-	Base      string
-	Quote     string
-	Status    string
-	Price     *float64
-	UpdatedAt *time.Time
+	Id             string
+	IdempotencyKey string
+	Base           string
+	Quote          string
+	Status         updateStatus
+	Price          *float64
+	UpdatedAt      *time.Time
 }
 
 type newUpdate struct {

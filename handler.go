@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v5"
+	"github.com/labstack/echo/v5/middleware"
 )
 
 type handler struct {
@@ -32,6 +33,9 @@ type rateResponse struct {
 func newHTTPServer(h *handler) *echo.Echo {
 	e := echo.New()
 	e.Logger = slog.Default()
+
+	e.Use(middleware.Recover())
+	e.Use(middleware.RequestLogger())
 
 	e.GET("/health", func(c *echo.Context) error {
 		return c.String(200, "OK")

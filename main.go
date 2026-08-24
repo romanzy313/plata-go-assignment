@@ -4,15 +4,15 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-
-	"github.com/joho/godotenv"
 )
 
 func main() {
-	if err := godotenv.Load(".env"); err != nil && !os.IsNotExist(err) {
-		slog.Error("Error loading .env file", "error", err)
+	cfg, err := newConfigFromEnv()
+	if err != nil {
+		slog.Error("Error reading config", "error", err)
 		os.Exit(1)
 	}
+	var _ = cfg
 
 	deps := &handler{
 		exchangeRateClient: nil,
@@ -20,5 +20,5 @@ func main() {
 	}
 	e := newHTTPServer(deps)
 
-	e.Start(fmt.Sprintf(":%s", os.Getenv("PORT")))
+	e.Start(fmt.Sprintf(":%d", cfg.Port))
 }

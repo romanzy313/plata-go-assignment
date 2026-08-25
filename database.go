@@ -6,7 +6,8 @@ import (
 )
 
 type apiDatabase interface {
-	createUpdate(ctx context.Context, update *newUpdate) error
+	// upserts the update based on idempotency key, returns update id.
+	upsertUpdate(ctx context.Context, update *upsertUpdate) (string, error)
 	getUpdateById(ctx context.Context, id string) (*update, error)
 	getUpdateLatest(ctx context.Context, base, quote string) (*update, error)
 }
@@ -31,19 +32,18 @@ func (s updateStatus) String() string {
 }
 
 type update struct {
-	Id             string
+	Id        string
+	Base      string
+	Quote     string
+	Status    updateStatus
+	Price     *float64
+	UpdatedAt *time.Time
+}
+
+type upsertUpdate struct {
 	IdempotencyKey string
 	Base           string
 	Quote          string
-	Status         updateStatus
-	Price          *float64
-	UpdatedAt      *time.Time
-}
-
-type newUpdate struct {
-	Id    string
-	Base  string
-	Quote string
 }
 
 type pendingUpdate struct {

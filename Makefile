@@ -6,3 +6,6 @@ build:
 
 run: build
 	./plata-go-assignment
+
+e2e:
+	node ./minie2e.js

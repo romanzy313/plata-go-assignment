@@ -20,9 +20,7 @@
 
 ## TODO
 
-- Application config
 - Database implementation
 - Background worker (pseudo cron)
-- Failure state on the update
-- Idepmotency of an update endpoint
+- Proper UUID formatting
 - Graceful shutdown

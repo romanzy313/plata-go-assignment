@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
@@ -47,8 +48,8 @@ $$
 $$;
 
 CREATE TABLE IF NOT EXISTS updates (
-  id UUID PRIMARY KEY,
-  idempotency_key TEXT NOT NULL UNIQUE,
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  idempotency_key UUID NOT NULL UNIQUE,
   base_currency CHAR(3) NOT NULL,
   quote_currency CHAR(3) NOT NULL,
   status update_status NOT NULL,
@@ -72,14 +73,76 @@ CREATE INDEX IF NOT EXISTS updates_latest_idx
 	return err
 }
 
-func (d *databasePostgres) createUpdate(ctx context.Context, update *newUpdate) error {
-	return fmt.Errorf("Not implemented")
+func (d *databasePostgres) upsertUpdate(ctx context.Context, update *upsertUpdate) (string, error) {
+	var id string
+	err := d.conn.QueryRow(ctx, `
+INSERT INTO updates (
+  idempotency_key,
+  base_currency,
+  quote_currency,
+  status
+)
+VALUES (
+  $1,
+  $2,
+  $3,
+  'pending'
+)
+ON CONFLICT (idempotency_key) DO NOTHING
+RETURNING id::text;`, update.IdempotencyKey, update.Base, update.Quote).Scan(&id)
+	if err != nil {
+		return "", err
+	}
+	return id, nil
 }
 
 func (d *databasePostgres) getUpdateById(ctx context.Context, id string) (*update, error) {
-	return nil, fmt.Errorf("Not implemented")
+	var u update
+	err := d.conn.QueryRow(ctx, `
+SELECT
+  id::text,
+  base_currency,
+  quote_currency,
+  status,
+  price,
+  updated_at
+FROM updates
+WHERE id = $1
+LIMIT 1;
+`, id).Scan(&u.Id, &u.Base, &u.Quote, &u.Status, &u.Price, &u.UpdatedAt)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &u, nil
 }
 
 func (d *databasePostgres) getUpdateLatest(ctx context.Context, base, quote string) (*update, error) {
-	return nil, fmt.Errorf("Not implemented")
+	u := update{
+		Base:   base,
+		Quote:  quote,
+		Status: updateStatusCompleted,
+	}
+	err := d.conn.QueryRow(ctx, `
+SELECT 
+  id::text,
+  price,
+  updated_at
+FROM updates
+WHERE
+  base_currency = $1 AND
+  quote_currency = $2 AND
+  status = 'completed'
+ORDER BY updated_at DESC
+LIMIT 1;
+`, base, quote).Scan(&u.Id, &u.Price, &u.UpdatedAt)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &u, nil
 }

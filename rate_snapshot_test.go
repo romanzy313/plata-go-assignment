@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-func TestSnapshot(t *testing.T) {
+func TestValidSnapshot(t *testing.T) {
 	snapshot := rateSnapshot{
 		Base: "EUR",
 		Rates: map[string]float64{
@@ -26,12 +26,12 @@ func TestSnapshot(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.base+"_"+test.quote, func(t *testing.T) {
-			gotRate, gotErr := calculateExchangeRate(&snapshot, test.base, test.quote)
-			if test.wantErr && gotErr == nil {
+			gotRate, err := calculateExchangeRate(&snapshot, test.base, test.quote)
+			if test.wantErr && err == nil {
 				t.Fatalf("wantErr but got no err")
 			}
-			if !test.wantErr && gotErr != nil {
-				t.Fatalf("unexpected error: %v", gotErr)
+			if !test.wantErr && err != nil {
+				t.Fatalf("unexpected error: %v", err)
 			}
 			if test.wantRate != gotRate {
 				t.Fatalf("want %f; got %f", test.wantRate, gotRate)

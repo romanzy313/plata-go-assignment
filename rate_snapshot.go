@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math"
 	"time"
 )
 
@@ -18,7 +19,7 @@ func calculateExchangeRate(snapshot *rateSnapshot, base, quote string) (float64,
 		}
 
 		rate, ok := snapshot.Rates[currency]
-		if !ok {
+		if !ok || rate <= 0 || math.IsNaN(rate) || math.IsInf(rate, 0) {
 			return 0, fmt.Errorf(
 				"snapshot is missing %s/%s rate",
 				snapshot.Base,

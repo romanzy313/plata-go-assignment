@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"strings"
 	"time"
 
@@ -32,13 +33,26 @@ type exchangeratesapiLatestResponse struct {
 	Rates     map[string]float64 `json:"rates"`
 }
 
+// the api client will make upto 3 retries. Retries are slow as free account
+// has a pretty low rate limit
 func newExchangeratesapiClient(apiKey string) *exchangeratesapiClient {
 	client := resty.New().
 		SetBaseURL("https://api.exchangeratesapi.io").
 		SetRetryCount(3).
-		SetRetryWaitTime(1 * time.Second).
-		SetRetryMaxWaitTime(5 * time.Second).
-		SetTimeout(10 * time.Second)
+		SetRetryWaitTime(5 * time.Second).
+		SetRetryMaxWaitTime(10 * time.Second).
+		SetTimeout(5 * time.Second).
+		AddRetryCondition(func(response *resty.Response, err error) bool {
+			if err != nil {
+				return true
+			}
+			if response == nil {
+				return false
+			}
+
+			return response.StatusCode() == http.StatusTooManyRequests ||
+				response.StatusCode() >= http.StatusInternalServerError
+		})
 
 	return &exchangeratesapiClient{
 		apiKey: apiKey,

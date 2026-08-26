@@ -9,6 +9,34 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+// https://knrdl.github.io/posts/postgres-enum/
+const schema = `
+DO
+$$
+    BEGIN
+		CREATE TYPE update_status AS ENUM ('pending', 'completed', 'failed');
+    EXCEPTION
+        WHEN duplicate_object THEN null;
+    END
+$$;
+
+CREATE TABLE IF NOT EXISTS updates (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  idempotency_key UUID NOT NULL UNIQUE,
+  base_currency CHAR(3) NOT NULL,
+  quote_currency CHAR(3) NOT NULL,
+  status update_status NOT NULL,
+  price DOUBLE PRECISION,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ
+);
+CREATE INDEX IF NOT EXISTS updates_pending_idx
+  ON updates (created_at)
+  WHERE status = 'pending';
+CREATE INDEX IF NOT EXISTS updates_latest_idx
+  ON updates (base_currency, quote_currency, updated_at DESC)
+  WHERE status = 'completed';`
+
 type databasePostgres struct {
 	pool *pgxpool.Pool
 }
@@ -44,33 +72,6 @@ func (d *databasePostgres) migrate(ctx context.Context) error {
 	}
 	defer tx.Rollback(ctx)
 
-	// https://knrdl.github.io/posts/postgres-enum/
-	const schema = `
-DO
-$$
-    BEGIN
-		CREATE TYPE update_status AS ENUM ('pending', 'completed', 'failed');
-    EXCEPTION
-        WHEN duplicate_object THEN null;
-    END
-$$;
-
-CREATE TABLE IF NOT EXISTS updates (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  idempotency_key UUID NOT NULL UNIQUE,
-  base_currency CHAR(3) NOT NULL,
-  quote_currency CHAR(3) NOT NULL,
-  status update_status NOT NULL,
-  price DOUBLE PRECISION,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ
-);
-CREATE INDEX IF NOT EXISTS updates_pending_idx
-  ON updates (created_at)
-  WHERE status = 'pending';
-CREATE INDEX IF NOT EXISTS updates_latest_idx
-  ON updates (base_currency, quote_currency, updated_at DESC)
-  WHERE status = 'completed';`
 	_, err = tx.Exec(ctx, schema)
 	if err != nil {
 		return err

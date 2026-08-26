@@ -6,31 +6,39 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type databasePostgres struct {
-	conn *pgx.Conn
+	pool *pgxpool.Pool
 }
 
 func newDatabasePostgres(ctx context.Context, databaseURL string) (*databasePostgres, error) {
-	conn, err := pgx.Connect(ctx, databaseURL)
+	config, err := pgxpool.ParseConfig(databaseURL)
+	if err != nil {
+		return nil, fmt.Errorf("invalid database URL: %w", err)
+	}
+	config.MaxConns = 2
+
+	conn, err := pgxpool.NewWithConfig(ctx, config)
 	if err != nil {
 		return nil, fmt.Errorf("cannot connect to database: %w", err)
 	}
-	d := &databasePostgres{conn: conn}
+
+	d := &databasePostgres{pool: conn}
 	if err := d.migrate(ctx); err != nil {
-		conn.Close(ctx)
+		conn.Close()
 		return nil, fmt.Errorf("failed to migrate database: %w", err)
 	}
 	return d, nil
 }
 
-func (d *databasePostgres) close(ctx context.Context) {
-	d.conn.Close(ctx)
+func (d *databasePostgres) close() {
+	d.pool.Close()
 }
 
 func (d *databasePostgres) migrate(ctx context.Context) error {
-	tx, err := d.conn.Begin(ctx)
+	tx, err := d.pool.Begin(ctx)
 	if err != nil {
 		return err
 	}
@@ -75,7 +83,7 @@ CREATE INDEX IF NOT EXISTS updates_latest_idx
 
 func (d *databasePostgres) upsertUpdate(ctx context.Context, update *upsertUpdate) (string, error) {
 	var id string
-	err := d.conn.QueryRow(ctx, `
+	err := d.pool.QueryRow(ctx, `
 INSERT INTO updates (
   idempotency_key,
   base_currency,
@@ -98,7 +106,7 @@ RETURNING id::text;`, update.IdempotencyKey, update.Base, update.Quote).Scan(&id
 
 func (d *databasePostgres) getUpdateById(ctx context.Context, id string) (*update, error) {
 	var u update
-	err := d.conn.QueryRow(ctx, `
+	err := d.pool.QueryRow(ctx, `
 SELECT
   id::text,
   base_currency,
@@ -125,7 +133,7 @@ func (d *databasePostgres) getUpdateLatest(ctx context.Context, base, quote stri
 		Quote:  quote,
 		Status: updateStatusCompleted,
 	}
-	err := d.conn.QueryRow(ctx, `
+	err := d.pool.QueryRow(ctx, `
 SELECT 
   id::text,
   price,
@@ -147,8 +155,8 @@ LIMIT 1;
 	return &u, nil
 }
 
-func (d *databasePostgres) getPendingUpdates(ctx context.Context) ([]*pendingUpdate, error) {
-	rows, err := d.conn.Query(ctx, `
+func (d *databasePostgres) getPendingUpdates(ctx context.Context, count int) ([]*pendingUpdate, error) {
+	rows, err := d.pool.Query(ctx, `
 SELECT 
   id::text,
   base_currency,
@@ -157,8 +165,8 @@ FROM updates
 WHERE
   status = 'pending'
 ORDER BY created_at ASC
-LIMIT 9999;
-`)
+LIMIT $1;
+`, count)
 	if err != nil {
 		return nil, err
 	}
@@ -187,7 +195,7 @@ func (d *databasePostgres) saveUpdateResults(
 		return nil
 	}
 
-	tx, err := d.conn.Begin(ctx)
+	tx, err := d.pool.Begin(ctx)
 	if err != nil {
 		return err
 	}

@@ -35,7 +35,7 @@ func run() error {
 	if err != nil {
 		return fmt.Errorf("database error: %w", err)
 	}
-	defer db.close(ctx)
+	defer db.close()
 
 	api := newExchangeratesapiClient(cfg.ExchangeratesapiKey)
 

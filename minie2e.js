@@ -74,4 +74,5 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-await main();
+// await main();
+await Promise.all(Array.from({ length: 5 }).map(() => main()));

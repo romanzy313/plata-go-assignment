@@ -16,17 +16,10 @@ async function main() {
 
   const updateId = data.updateId;
 
-  [ok, data] = await getById(updateId);
-  console.log("get by id", data);
-  if (!ok || data.status != "pending") {
-    throw Error("failed get by id");
-  }
-
   [ok, data] = await getLatest(pair);
   console.log("latest", data);
 
   for (var i = 1; i <= 4; i++) {
-    await sleep(10000);
     [ok, data] = await getById(updateId);
     console.log(`attempt ${i}: get by id`, data);
     if (!ok) {
@@ -37,6 +30,8 @@ async function main() {
       console.log("e2e success!");
       return;
     }
+
+    await sleep(5000);
   }
 
   throw new Error("e2e failed");

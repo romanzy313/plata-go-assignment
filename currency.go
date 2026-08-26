@@ -9,10 +9,19 @@ var errCurrencyInvalid = errors.New("Invalid currency")
 var errCurrencyNotSupported = errors.New("Currency is not supported")
 var errCurrencyPairInvalid = errors.New("Invalid currency pair")
 
-var supportedCurrencies = map[string]struct{}{
+var supportedCurrenciesMap = map[string]struct{}{
 	"USD": {},
 	"EUR": {},
 	"MXN": {},
+}
+var supportedCurrencies = supportedCurrenciesSlice()
+
+func supportedCurrenciesSlice() []string {
+	arr := []string{}
+	for k := range supportedCurrenciesMap {
+		arr = append(arr, k)
+	}
+	return arr
 }
 
 // parses, validates, and returns base and quote from currency pair
@@ -48,7 +57,7 @@ func validateCurrency(value string) (string, error) {
 	}
 
 	upper := strings.ToUpper(value)
-	if _, ok := supportedCurrencies[upper]; !ok {
+	if _, ok := supportedCurrenciesMap[upper]; !ok {
 		return "", errCurrencyNotSupported
 	}
 

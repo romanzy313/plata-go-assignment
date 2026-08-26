@@ -5,5 +5,5 @@ import (
 )
 
 type exchangeRateClient interface {
-	latestSnapshot(ctx context.Context, base string, symbols []string) (*rateSnapshot, error)
+	latestSnapshot(ctx context.Context, symbols []string) (*rateSnapshot, error)
 }

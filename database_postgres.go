@@ -146,3 +146,85 @@ LIMIT 1;
 	}
 	return &u, nil
 }
+
+func (d *databasePostgres) getPendingUpdates(ctx context.Context) ([]*pendingUpdate, error) {
+	rows, err := d.conn.Query(ctx, `
+SELECT 
+  id::text,
+  base_currency,
+  quote_currency
+FROM updates
+WHERE
+  status = 'pending'
+ORDER BY created_at DESC
+LIMIT 1;
+`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	pendingUpdates := make([]*pendingUpdate, 0)
+	for rows.Next() {
+		var u pendingUpdate
+		if err := rows.Scan(&u.Id, &u.Base, &u.Quote); err != nil {
+			return nil, err
+		}
+		pendingUpdates = append(pendingUpdates, &u)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return pendingUpdates, nil
+}
+
+func (d *databasePostgres) saveUpdateResults(
+	ctx context.Context,
+	successes []*successfulUpdate,
+	failures []string) error {
+	if len(successes) == 0 && len(failures) == 0 {
+		return nil
+	}
+
+	tx, err := d.conn.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	// save success
+	for _, u := range successes {
+		res, err := tx.Exec(ctx, `
+UPDATE updates
+SET
+  status = 'completed',
+  price = $2,
+  updated_at = $3
+WHERE
+  id = $1 AND
+  status = 'pending';`, u.Id, u.Price, u.UpdatedAt)
+		if err != nil {
+			return err
+		}
+		if res.RowsAffected() != 1 {
+			return fmt.Errorf("could not complete pending update %s", u.Id)
+		}
+	}
+
+	// save failures
+	if len(failures) > 0 {
+		_, err = tx.Exec(ctx, `
+UPDATE updates
+SET
+  status = 'failed'
+WHERE
+  id = ANY($1) AND
+  status = 'pending';`, failures)
+		if err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit(ctx)
+}

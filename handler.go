@@ -32,7 +32,12 @@ type quoteResponse struct {
 	UpdatedAt *string  `json:"updatedAt"`
 }
 
-func newHTTPServer(h *handler) *echo.Echo {
+func newHTTPServer(api exchangeRateClient, db apiDatabase) *echo.Echo {
+	h := &handler{
+		exchangeRateClient: api,
+		apiDatabase:        db,
+	}
+
 	e := echo.New()
 	e.Logger = slog.Default()
 
@@ -140,7 +145,7 @@ func (h *handler) getByUpdateId(c *echo.Context) error {
 
 func (h *handler) testApi(c *echo.Context) error {
 	snapshot, err := h.exchangeRateClient.latestSnapshot(
-		c.Request().Context(), "EUR", []string{"USD", "MXN"})
+		c.Request().Context(), []string{"USD", "MXN"})
 	slog.Info("api test", "snapshot", snapshot, "err", err)
 	if err != nil {
 		return c.String(http.StatusInternalServerError, "not ok")

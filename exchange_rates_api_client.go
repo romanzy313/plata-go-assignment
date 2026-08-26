@@ -9,6 +9,8 @@ import (
 	"github.com/go-resty/resty/v2"
 )
 
+const exchangeratesapiBaseCurrency = "EUR"
+
 type exchangeratesapiClient struct {
 	apiKey string
 	client *resty.Client
@@ -44,11 +46,11 @@ func newExchangeratesapiClient(apiKey string) *exchangeratesapiClient {
 	}
 }
 
-func (c *exchangeratesapiClient) latestSnapshot(ctx context.Context, base string, symbols []string) (*rateSnapshot, error) {
+func (c *exchangeratesapiClient) latestSnapshot(ctx context.Context, symbols []string) (*rateSnapshot, error) {
 	res, err := c.client.R().
 		SetQueryParams(map[string]string{
 			"access_key": c.apiKey,
-			"base":       base,
+			"base":       exchangeratesapiBaseCurrency,
 			"symbols":    strings.Join(symbols, ","),
 		}).
 		SetHeader("Accept", "application/json").
@@ -67,7 +69,7 @@ func (c *exchangeratesapiClient) latestSnapshot(ctx context.Context, base string
 	body := res.Result().(*exchangeratesapiLatestResponse)
 
 	return &rateSnapshot{
-		Base:      base,
+		Base:      exchangeratesapiBaseCurrency,
 		Rates:     body.Rates,
 		UpdatedAt: time.Unix(body.Timestamp, 0),
 	}, nil

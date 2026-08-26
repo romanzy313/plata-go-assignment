@@ -13,10 +13,10 @@ type apiDatabase interface {
 }
 
 type workerDatabase interface {
-	// returns updates that have a "pending" status
+	// returns updates that have a "pending" status.
+	// TODO: add count property
 	getPendingUpdates(ctx context.Context) ([]*pendingUpdate, error)
-	completeUpdates(ctx context.Context, updates []*completeUpdate) error
-	failUpdates(ctx context.Context, updateIds []string) error
+	saveUpdateResults(ctx context.Context, successes []*successfulUpdate, failures []string) error
 }
 
 type updateStatus string
@@ -52,7 +52,7 @@ type pendingUpdate struct {
 	Quote string
 }
 
-type completeUpdate struct {
+type successfulUpdate struct {
 	Id        string
 	Price     float64
 	UpdatedAt time.Time

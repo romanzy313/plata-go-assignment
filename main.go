@@ -5,32 +5,52 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
+
+	"github.com/labstack/echo/v5"
 )
 
 func main() {
-	ctx := context.TODO()
+	if err := run(); err != nil {
+		slog.Error("Server error", "error", err)
+		os.Exit(1)
+	}
+}
+
+func run() error {
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
 
 	cfg, err := newConfigFromEnv()
 	if err != nil {
-		slog.Error("Config error", "error", err)
-		os.Exit(1)
+		return fmt.Errorf("config error: %w", err)
 	}
+	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+		Level: slog.LevelDebug,
+	}))
 
 	db, err := newDatabasePostgres(ctx, cfg.DatabaseUrl)
 	if err != nil {
-		slog.Error("Database error", "error", err)
-		os.Exit(1)
+		return fmt.Errorf("database error: %w", err)
 	}
 	defer db.close(ctx)
 
-	rateClient := newExchangeratesapiClient(cfg.ExchangeratesapiKey)
+	api := newExchangeratesapiClient(cfg.ExchangeratesapiKey)
 
-	handler := &handler{
-		exchangeRateClient: rateClient,
-		apiDatabase:        db,
+	worker := newWorker(logger, api, db, cfg.WorkerPollInterval)
+	go worker.Run(ctx)
+
+	e := newHTTPServer(api, db)
+	sc := echo.StartConfig{
+		Address:         fmt.Sprintf(":%d", cfg.Port),
+		GracefulTimeout: 10 * time.Second,
+		HideBanner:      true,
+	}
+	if err := sc.Start(ctx, e); err != nil {
+		return fmt.Errorf("server failed to start: %w", err)
 	}
 
-	e := newHTTPServer(handler)
-
-	e.Start(fmt.Sprintf(":%d", cfg.Port))
+	return nil
 }

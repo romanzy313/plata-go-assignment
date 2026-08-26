@@ -58,21 +58,15 @@ func newHTTPServer(api exchangeRateClient, db apiDatabase) *echo.Echo {
 }
 
 func (h *handler) update(c *echo.Context) error {
-	var request struct {
-		Pair string `json:"pair"`
-	}
-	if err := c.Bind(&request); err != nil {
-		return c.JSON(http.StatusBadRequest, errorResponse{
-			Error: "Invalid request body",
-		})
-	}
 	idempotencyKey := c.Request().Header.Get("Idempotency-Key")
 	if _, err := uuid.Parse(idempotencyKey); err != nil {
 		return c.JSON(http.StatusBadRequest, errorResponse{
 			Error: "Invalid Idempotency-Key header",
 		})
 	}
-	base, quote, err := parseCurrencyPair(request.Pair)
+
+	pair := c.QueryParam("pair")
+	base, quote, err := parseCurrencyPair(pair)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, errorResponse{
 			Error: err.Error(),
@@ -95,20 +89,14 @@ func (h *handler) update(c *echo.Context) error {
 }
 
 func (h *handler) getLatest(c *echo.Context) error {
-	var request struct {
-		Pair string `query:"pair"`
-	}
-	if err := c.Bind(&request); err != nil {
-		return c.JSON(http.StatusBadRequest, errorResponse{
-			Error: "Invalid request",
-		})
-	}
-	base, quote, err := parseCurrencyPair(request.Pair)
+	pair := c.QueryParam("pair")
+	base, quote, err := parseCurrencyPair(pair)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, errorResponse{
 			Error: err.Error(),
 		})
 	}
+
 	update, err := h.apiDatabase.getUpdateLatest(c.Request().Context(),
 		base, quote)
 	if err != nil {

@@ -2,12 +2,12 @@
 
 ## Architecture
 
-- Client requests an update via `POST /update`. Update is added to the database
-  in a `pending` state and `updateId` is returned.
-- Background worker fetches all supported rate parts every X minutes. It fills
+- Client requests an update via `POST /update?pair=XXX/YYY`. Update is added to
+  the database in a `pending` state and `updateId` is returned.
+- Background worker fetches all supported rate parts every X seconds. It fills
   all pending updates with the exchange rate.
 - Client can request their exchange rate via `GET /quote/:updateId`, or latest
-  value can be fetched using `GET /quote/latest`
+  value can be fetched using `GET /quote/latest?pair=XXX/YYY`
 
 ## Libraries
 
@@ -20,7 +20,4 @@
 
 ## TODO
 
-- Database implementation
-- Background worker (pseudo cron)
 - Proper UUID formatting
-- Graceful shutdown

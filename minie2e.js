@@ -48,14 +48,15 @@ async function health() {
 }
 
 async function newUpdate(idempotencyKey, pair) {
-  const res = await fetch("http://localhost:3000/update", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Idempotency-Key": idempotencyKey,
+  const res = await fetch(
+    `http://localhost:3000/update?pair=${encodeURIComponent(pair)}`,
+    {
+      method: "POST",
+      headers: {
+        "Idempotency-Key": idempotencyKey,
+      },
     },
-    body: JSON.stringify({ pair }),
-  });
+  );
   const data = await res.json();
   return [res.ok, data];
 }

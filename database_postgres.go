@@ -156,8 +156,8 @@ SELECT
 FROM updates
 WHERE
   status = 'pending'
-ORDER BY created_at DESC
-LIMIT 1;
+ORDER BY created_at ASC
+LIMIT 9999;
 `)
 	if err != nil {
 		return nil, err

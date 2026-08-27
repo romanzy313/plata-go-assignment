@@ -1,4 +1,4 @@
-async function main() {
+async function run(index) {
   let ok, data;
   [ok] = await health();
   if (!ok) {
@@ -9,7 +9,7 @@ async function main() {
   const pair = "EUR/MXN";
 
   [ok, data] = await newUpdate(idempotencyKey, pair);
-  console.log("new update", data);
+  console.log(index, "new update", data);
   if (!ok) {
     throw Error("failed to update");
   }
@@ -17,17 +17,17 @@ async function main() {
   const updateId = data.updateId;
 
   [ok, data] = await getLatest(pair);
-  console.log("latest", data);
+  console.log(index, "latest", data);
 
   for (var i = 1; i <= 4; i++) {
     [ok, data] = await getById(updateId);
-    console.log(`attempt ${i}: get by id`, data);
+    console.log(index, `attempt ${i}: get by id`, data);
     if (!ok) {
       throw Error("failed get by id");
     }
 
     if (data.status == "completed") {
-      console.log("e2e success!");
+      console.log(index, "e2e success!");
       return;
     }
 
@@ -75,4 +75,4 @@ function sleep(ms) {
 }
 
 // await main();
-await Promise.all(Array.from({ length: 5 }).map(() => main()));
+await Promise.all(Array.from({ length: 5 }).map((_, index) => run(index + 1)));

@@ -1,3 +1,10 @@
+function getPair(index) {
+  const supported = ["EUR", "USD", "MXN"];
+  const first = supported[index % supported.length];
+  const second = supported[(index + 1) % supported.length];
+  return `${first}/${second}`;
+}
+
 async function run(index) {
   let ok, data;
   [ok] = await health();
@@ -6,7 +13,7 @@ async function run(index) {
   }
 
   const idempotencyKey = crypto.randomUUID();
-  const pair = "EUR/MXN";
+  const pair = getPair(index);
 
   [ok, data] = await newUpdate(idempotencyKey, pair);
   console.log(index, "new update", data);
@@ -75,4 +82,4 @@ function sleep(ms) {
 }
 
 // await main();
-await Promise.all(Array.from({ length: 5 }).map((_, index) => run(index + 1)));
+await Promise.all(Array.from({ length: 5 }).map((_, index) => run(index)));

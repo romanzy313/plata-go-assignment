@@ -42,6 +42,9 @@ func run() error {
 	worker := newWorker(logger, api, db, cfg.WorkerPollInterval)
 	go worker.Run(ctx)
 
+	cleanupWorker := newCleanupWorker(logger, db, cfg.WorkerPollInterval, cfg.StaleUpdateDuration)
+	go cleanupWorker.Run(ctx)
+
 	e := newHTTPServer(api, db)
 	sc := echo.StartConfig{
 		Address:         fmt.Sprintf(":%d", cfg.Port),

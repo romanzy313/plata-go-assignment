@@ -13,10 +13,10 @@ type apiDatabase interface {
 }
 
 type workerDatabase interface {
-	// returns updates that have a "pending" status.
-	// TODO: add count property
+	// returns updates that have a "pending" status and sets them to "processing"
 	getPendingUpdates(ctx context.Context, count int) ([]*pendingUpdate, error)
 	saveUpdateResults(ctx context.Context, successes []*successfulUpdate, failures []string) error
+	failStaleUpdates(ctx context.Context, staleDuration time.Duration) (int64, error)
 }
 
 type updateStatus string

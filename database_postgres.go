@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -243,4 +244,34 @@ WHERE
 	}
 
 	return tx.Commit(ctx)
+}
+
+func (d *databasePostgres) failStaleUpdates(
+	ctx context.Context,
+	staleDuration time.Duration,
+) (int64, error) {
+	result, err := d.pool.Exec(ctx, `
+WITH stale_updates AS (
+  SELECT id
+  FROM updates
+  WHERE
+    status IN ('pending', 'processing') AND
+    created_at < NOW() - $1::interval
+  FOR NO KEY UPDATE SKIP LOCKED
+)
+UPDATE updates AS u
+SET
+  status = 'failed',
+  updated_at = NOW()
+FROM stale_updates AS stale
+WHERE
+  u.id = stale.id AND
+  u.status IN ('pending', 'processing');`,
+		staleDuration,
+	)
+	if err != nil {
+		return 0, fmt.Errorf("failed to clean stale updates: %w", err)
+	}
+
+	return result.RowsAffected(), nil
 }

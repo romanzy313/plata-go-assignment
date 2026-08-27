@@ -14,6 +14,7 @@ type config struct {
 	ExchangeratesapiKey string
 	Port                int
 	WorkerPollInterval  time.Duration
+	StaleUpdateDuration time.Duration
 }
 
 func newConfigFromEnv() (*config, error) {
@@ -21,7 +22,8 @@ func newConfigFromEnv() (*config, error) {
 		DatabaseUrl:         "",
 		ExchangeratesapiKey: "",
 		Port:                3000,
-		WorkerPollInterval:  time.Minute,
+		WorkerPollInterval:  10 * time.Second,
+		StaleUpdateDuration: 30 * time.Second,
 	}
 
 	if err := godotenv.Load(".env"); err != nil && !os.IsNotExist(err) {
@@ -56,5 +58,12 @@ func newConfigFromEnv() (*config, error) {
 		cfg.WorkerPollInterval = workerPollInterval
 	}
 
+	if staleDurationStr, ok := os.LookupEnv("STALE_UPDATE_DURATION"); ok {
+		staleDuration, err := time.ParseDuration(staleDurationStr)
+		if err != nil {
+			return nil, fmt.Errorf("incorrect STALE_UPDATE_DURATION: %w", err)
+		}
+		cfg.StaleUpdateDuration = staleDuration
+	}
 	return &cfg, nil
 }

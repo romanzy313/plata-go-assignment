@@ -10,8 +10,6 @@ fetching currency exchange rates. It uses
 to fetch the latest exchange rates. Only `USD`, `EUR`, and `MXN` currencies are
 supported.
 
-Original assignment in Russian is at [ASSIGNMENT.md](./ASSIGNMENT.md)
-
 ## How to run
 
 - Have Docker installed.
@@ -69,7 +67,7 @@ representing an asynchronous exchange rate request.
 The HTTP server creates new updates with a status `pending`, respecting
 idempotency of the requests.
 
-The update worker grabs `pending` updates and sets their status to processing.
+The update worker grabs `pending` updates and sets their status to `processing`.
 Then the external api is queried for up-to-date exchange rates. Only one
 external request is needed to perform conversion of all supported currencies.
 Next, the worker performs the conversions and saves them to the database as

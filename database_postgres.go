@@ -158,12 +158,14 @@ LIMIT 1;
 }
 
 // https://habr.com/ru/articles/984102/
-func (d *databasePostgres) getPendingUpdates(ctx context.Context, count int) ([]*pendingUpdate, error) {
+func (d *databasePostgres) getPendingUpdates(ctx context.Context, count int, staleDuration time.Duration) ([]*pendingUpdate, error) {
 	rows, err := d.pool.Query(ctx, `
 WITH update_selection AS (
   SELECT id
   FROM updates
-  WHERE status = 'pending'
+  WHERE
+    status = 'pending' AND
+    created_at >= NOW() - $2::interval
   ORDER BY created_at ASC
   LIMIT $1
   FOR NO KEY UPDATE SKIP LOCKED
@@ -175,7 +177,7 @@ WHERE
   u.id = selected.id AND
   u.status = 'pending'
 RETURNING u.id::text, u.base_currency, u.quote_currency;
-`, count)
+`, count, staleDuration)
 	if err != nil {
 		return nil, err
 	}

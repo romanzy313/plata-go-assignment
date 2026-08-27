@@ -14,7 +14,7 @@ type apiDatabase interface {
 
 type workerDatabase interface {
 	// returns updates that have a "pending" status and sets them to "processing"
-	getPendingUpdates(ctx context.Context, count int) ([]*pendingUpdate, error)
+	getPendingUpdates(ctx context.Context, count int, staleDuration time.Duration) ([]*pendingUpdate, error)
 	saveUpdateResults(ctx context.Context, successes []*successfulUpdate, failures []string) error
 	failStaleUpdates(ctx context.Context, staleDuration time.Duration) (int64, error)
 }

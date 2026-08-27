@@ -8,27 +8,29 @@ import (
 )
 
 type worker struct {
-	logger       *slog.Logger
-	api          exchangeRateClient
-	db           workerDatabase
-	batchSize    int
-	pollInterval time.Duration
-	// TODO: items older then this are changed to failed
-	// pendingTimeout time.Duration
+	logger        *slog.Logger
+	api           exchangeRateClient
+	db            workerDatabase
+	batchSize     int
+	pollInterval  time.Duration
+	staleDuration time.Duration
 }
 
 func newWorker(
 	logger *slog.Logger,
 	api exchangeRateClient,
 	db workerDatabase,
+	batchSize int,
 	pollInterval time.Duration,
+	staleDuration time.Duration,
 ) *worker {
 	return &worker{
-		logger:       logger,
-		api:          api,
-		db:           db,
-		batchSize:    3, // for demo
-		pollInterval: pollInterval,
+		logger:        logger,
+		api:           api,
+		db:            db,
+		batchSize:     batchSize,
+		pollInterval:  pollInterval,
+		staleDuration: staleDuration,
 	}
 }
 
@@ -67,7 +69,7 @@ func (w *worker) processUntilEmpty(ctx context.Context) {
 
 // Process returns true if more updates are pending
 func (w *worker) Process(ctx context.Context) (bool, error) {
-	pendingUpdates, err := w.db.getPendingUpdates(ctx, w.batchSize)
+	pendingUpdates, err := w.db.getPendingUpdates(ctx, w.batchSize, w.staleDuration)
 	if err != nil {
 		return false, err
 	}

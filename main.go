@@ -12,6 +12,8 @@ import (
 	"github.com/labstack/echo/v5"
 )
 
+const batchSize = 3
+
 func main() {
 	if err := run(); err != nil {
 		slog.Error("Server error", "error", err)
@@ -39,7 +41,7 @@ func run() error {
 
 	api := newExchangeratesapiClient(cfg.ExchangeratesapiKey)
 
-	worker := newWorker(logger, api, db, cfg.WorkerPollInterval)
+	worker := newWorker(logger, api, db, batchSize, cfg.WorkerPollInterval, cfg.StaleUpdateDuration)
 	go worker.Run(ctx)
 
 	cleanupWorker := newCleanupWorker(logger, db, cfg.WorkerPollInterval, cfg.StaleUpdateDuration)

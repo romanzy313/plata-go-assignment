@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 )
 
@@ -48,6 +49,10 @@ func parseCurrencyPair(pair string) (string, string, error) {
 	}
 
 	return validBase, validQuote, nil
+}
+
+func currencyPairString(base, quote string) string {
+	return fmt.Sprintf("%s/%s", base, quote)
 }
 
 // validates and returns properly formatted currency code

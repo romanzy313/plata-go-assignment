@@ -32,6 +32,7 @@ type updateResponse struct {
 
 type quoteResponse struct {
 	UpdateId  string   `json:"updateId"`
+	Pair      string   `json:"pair"`
 	Status    string   `json:"status"`
 	Price     *float64 `json:"price"`
 	UpdatedAt *string  `json:"updatedAt"`
@@ -145,11 +146,19 @@ func (h *handler) getByUpdateId(c *echo.Context) error {
 }
 
 func updateToQuoteResult(u *update) quoteResponse {
+	// hide "processing" state from the client
+	status := u.Status
+	if status == updateStatusProcessing {
+		status = updateStatusPending
+	}
+
 	result := quoteResponse{
 		UpdateId: u.Id,
-		Status:   u.Status.String(),
+		Pair:     currencyPairString(u.Base, u.Quote),
+		Status:   status.String(),
 		Price:    u.Price,
 	}
+
 	if u.UpdatedAt != nil {
 		updatedAt := u.UpdatedAt.UTC().Format(time.RFC3339)
 		result.UpdatedAt = &updatedAt

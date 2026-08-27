@@ -4,7 +4,7 @@
 
 This is a test assignment submission for [Plata](https://bancoplata.mx/en).
 
-This repo contains a service that provides an asynchronous interface for
+This repo contains a Go service that provides an asynchronous interface for
 fetching currency exchange rates. It uses
 [exchangeratesapi.io](https://docs.apilayer.com/exchangeratesapi/docs/exchange-rates-api-v-1-0-0#/Endpoints/exchangeratesapiLatest)
 to fetch the latest exchange rates. Only `USD`, `EUR`, and `MXN` currencies are
@@ -49,7 +49,3 @@ Next, the worker performs the conversions and saves them to the database as
 The update could be stuck in the `processing` state, or become stale after a
 configurable time. To address these issues, the cleanup worker moves old or
 unfinished updates to a `failed` state.
-
-# TODOs
-
-Return fewer statuses to the client. Return pair too

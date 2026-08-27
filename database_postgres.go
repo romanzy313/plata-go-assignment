@@ -14,7 +14,7 @@ const schema = `
 DO
 $$
     BEGIN
-		CREATE TYPE update_status AS ENUM ('pending', 'completed', 'failed');
+		CREATE TYPE update_status AS ENUM ('pending', 'processing', 'completed', 'failed');
     EXCEPTION
         WHEN duplicate_object THEN null;
     END
@@ -156,17 +156,24 @@ LIMIT 1;
 	return &u, nil
 }
 
+// https://habr.com/ru/articles/984102/
 func (d *databasePostgres) getPendingUpdates(ctx context.Context, count int) ([]*pendingUpdate, error) {
 	rows, err := d.pool.Query(ctx, `
-SELECT 
-  id::text,
-  base_currency,
-  quote_currency
-FROM updates
+WITH update_selection AS (
+  SELECT id
+  FROM updates
+  WHERE status = 'pending'
+  ORDER BY created_at ASC
+  LIMIT $1
+  FOR NO KEY UPDATE SKIP LOCKED
+)
+UPDATE updates AS u
+SET status = 'processing'
+FROM update_selection AS selected
 WHERE
-  status = 'pending'
-ORDER BY created_at ASC
-LIMIT $1;
+  u.id = selected.id AND
+  u.status = 'pending'
+RETURNING u.id::text, u.base_currency, u.quote_currency;
 `, count)
 	if err != nil {
 		return nil, err
@@ -212,7 +219,7 @@ SET
   updated_at = $3
 WHERE
   id = $1 AND
-  status = 'pending';`, u.Id, u.Price, u.UpdatedAt)
+  status = 'processing';`, u.Id, u.Price, u.UpdatedAt)
 		if err != nil {
 			return err
 		}

@@ -22,9 +22,10 @@ type workerDatabase interface {
 type updateStatus string
 
 const (
-	updateStatusPending   updateStatus = "pending"
-	updateStatusCompleted updateStatus = "completed"
-	updateStatusFailed    updateStatus = "failed"
+	updateStatusPending    updateStatus = "pending"
+	updateStatusProcessing updateStatus = "processing"
+	updateStatusCompleted  updateStatus = "completed"
+	updateStatusFailed     updateStatus = "failed"
 )
 
 func (s updateStatus) String() string {

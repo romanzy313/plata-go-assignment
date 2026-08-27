@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-type worker struct {
+type updateWorker struct {
 	logger        *slog.Logger
 	api           exchangeRateClient
 	db            workerDatabase
@@ -16,15 +16,15 @@ type worker struct {
 	staleDuration time.Duration
 }
 
-func newWorker(
+func newUpdateWorker(
 	logger *slog.Logger,
 	api exchangeRateClient,
 	db workerDatabase,
 	batchSize int,
 	pollInterval time.Duration,
 	staleDuration time.Duration,
-) *worker {
-	return &worker{
+) *updateWorker {
+	return &updateWorker{
 		logger:        logger,
 		api:           api,
 		db:            db,
@@ -34,7 +34,7 @@ func newWorker(
 	}
 }
 
-func (w *worker) Run(ctx context.Context) {
+func (w *updateWorker) Run(ctx context.Context) {
 	w.processUntilEmpty(ctx)
 
 	ticker := time.NewTicker(w.pollInterval)
@@ -49,7 +49,7 @@ func (w *worker) Run(ctx context.Context) {
 	}
 }
 
-func (w *worker) processUntilEmpty(ctx context.Context) {
+func (w *updateWorker) processUntilEmpty(ctx context.Context) {
 	for {
 		// stop when context is cancelled
 		if ctx.Err() != nil {
@@ -68,7 +68,7 @@ func (w *worker) processUntilEmpty(ctx context.Context) {
 }
 
 // Process returns true if more updates are pending
-func (w *worker) Process(ctx context.Context) (bool, error) {
+func (w *updateWorker) Process(ctx context.Context) (bool, error) {
 	pendingUpdates, err := w.db.getPendingUpdates(ctx, w.batchSize, w.staleDuration)
 	if err != nil {
 		return false, err

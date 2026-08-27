@@ -41,7 +41,7 @@ func run() error {
 
 	api := newExchangeratesapiClient(cfg.ExchangeratesapiKey)
 
-	worker := newWorker(logger, api, db, batchSize, cfg.WorkerPollInterval, cfg.StaleUpdateDuration)
+	worker := newUpdateWorker(logger, api, db, batchSize, cfg.WorkerPollInterval, cfg.StaleUpdateDuration)
 	go worker.Run(ctx)
 
 	cleanupWorker := newCleanupWorker(logger, db, cfg.WorkerPollInterval, cfg.StaleUpdateDuration)

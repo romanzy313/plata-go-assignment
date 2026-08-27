@@ -71,7 +71,8 @@ func (s *server) Run(ctx context.Context, port int) error {
 
 func (h *handler) update(c *echo.Context) error {
 	idempotencyKey := c.Request().Header.Get("Idempotency-Key")
-	if _, err := uuid.Parse(idempotencyKey); err != nil {
+	parsedIdempotencyKey, err := uuid.Parse(idempotencyKey)
+	if err != nil {
 		return c.JSON(http.StatusBadRequest, errorResponse{
 			Error: "Invalid Idempotency-Key header",
 		})
@@ -86,7 +87,7 @@ func (h *handler) update(c *echo.Context) error {
 	}
 
 	updateId, err := h.db.upsertUpdate(c.Request().Context(), &upsertUpdate{
-		IdempotencyKey: idempotencyKey,
+		IdempotencyKey: parsedIdempotencyKey.String(),
 		Base:           base,
 		Quote:          quote,
 	})

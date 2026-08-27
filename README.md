@@ -50,6 +50,6 @@ The update could be stuck in the `processing` state, or become stale after a
 configurable time. To address these issues, the cleanup worker moves old or
 unfinished updates to a `failed` state.
 
-## TODO
+# TODOs
 
-- Proper UUID formatting
+Return fewer statuses to the client. Return pair too

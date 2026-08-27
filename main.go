@@ -47,7 +47,7 @@ func run() error {
 	cleanupWorker := newCleanupWorker(logger, db, cfg.WorkerPollInterval, cfg.StaleUpdateDuration)
 	go cleanupWorker.Run(ctx)
 
-	e := newHTTPServer(api, db)
+	e := newHTTPServer(logger, api, db)
 	sc := echo.StartConfig{
 		Address:         fmt.Sprintf(":%d", cfg.Port),
 		GracefulTimeout: 10 * time.Second,

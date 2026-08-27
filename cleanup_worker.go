@@ -22,7 +22,7 @@ func newCleanupWorker(
 	staleDuration time.Duration,
 ) *cleanupWorker {
 	return &cleanupWorker{
-		logger:        logger,
+		logger:        logger.With("source", "cleanupWorker"),
 		db:            db,
 		pollInterval:  pollInterval,
 		staleDuration: staleDuration,

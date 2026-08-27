@@ -25,7 +25,7 @@ func newUpdateWorker(
 	staleDuration time.Duration,
 ) *updateWorker {
 	return &updateWorker{
-		logger:        logger,
+		logger:        logger.With("source", "updateWorker"),
 		api:           api,
 		db:            db,
 		batchSize:     batchSize,

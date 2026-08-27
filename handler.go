@@ -32,14 +32,14 @@ type quoteResponse struct {
 	UpdatedAt *string  `json:"updatedAt"`
 }
 
-func newHTTPServer(api exchangeRateClient, db apiDatabase) *echo.Echo {
+func newHTTPServer(logger *slog.Logger, api exchangeRateClient, db apiDatabase) *echo.Echo {
 	h := &handler{
 		exchangeRateClient: api,
 		apiDatabase:        db,
 	}
 
 	e := echo.New()
-	e.Logger = slog.Default()
+	e.Logger = logger.With("source", "server")
 
 	e.Use(middleware.RequestLogger())
 	e.Use(middleware.Recover())

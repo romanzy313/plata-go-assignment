@@ -36,8 +36,8 @@ func newConfigFromEnv() (*config, error) {
 	}
 	cfg.DatabaseUrl = databaseUrl
 
-	apiKey, ok := os.LookupEnv("EXCHANGERATESAPI_KEY")
-	if !ok {
+	apiKey := os.Getenv("EXCHANGERATESAPI_KEY")
+	if apiKey == "" {
 		return nil, fmt.Errorf("missing EXCHANGERATESAPI_KEY")
 	}
 	cfg.ExchangeratesapiKey = apiKey

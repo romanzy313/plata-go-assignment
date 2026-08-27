@@ -28,12 +28,19 @@ type errorResponse struct {
 
 type updateResponse struct {
 	UpdateId string `json:"updateId"`
+	Pair     string `json:"pair"`
 }
 
-type quoteResponse struct {
+type quoteIdResponse struct {
 	UpdateId  string   `json:"updateId"`
 	Pair      string   `json:"pair"`
 	Status    string   `json:"status"`
+	Price     *float64 `json:"price"`
+	UpdatedAt *string  `json:"updatedAt"`
+}
+
+type quoteLatestResponse struct {
+	Pair      string   `json:"pair"`
 	Price     *float64 `json:"price"`
 	UpdatedAt *string  `json:"updatedAt"`
 }
@@ -99,6 +106,7 @@ func (h *handler) update(c *echo.Context) error {
 
 	return c.JSON(http.StatusOK, updateResponse{
 		UpdateId: updateId,
+		Pair:     currencyPairString(base, quote),
 	})
 }
 
@@ -123,7 +131,7 @@ func (h *handler) getLatest(c *echo.Context) error {
 		})
 	}
 
-	return c.JSON(http.StatusOK, updateToQuoteResult(update))
+	return c.JSON(http.StatusOK, updateToQuoteLatestResponse(update))
 }
 
 func (h *handler) getByUpdateId(c *echo.Context) error {
@@ -142,21 +150,33 @@ func (h *handler) getByUpdateId(c *echo.Context) error {
 			Error: "Update not found",
 		})
 	}
-	return c.JSON(http.StatusOK, updateToQuoteResult(update))
+	return c.JSON(http.StatusOK, updateToQuoteIdResponse(update))
 }
 
-func updateToQuoteResult(u *update) quoteResponse {
+func updateToQuoteIdResponse(u *update) quoteIdResponse {
 	// hide "processing" state from the client
 	status := u.Status
 	if status == updateStatusProcessing {
 		status = updateStatusPending
 	}
 
-	result := quoteResponse{
+	result := quoteIdResponse{
 		UpdateId: u.Id,
 		Pair:     currencyPairString(u.Base, u.Quote),
 		Status:   status.String(),
 		Price:    u.Price,
+	}
+
+	if u.UpdatedAt != nil {
+		updatedAt := u.UpdatedAt.UTC().Format(time.RFC3339)
+		result.UpdatedAt = &updatedAt
+	}
+	return result
+}
+func updateToQuoteLatestResponse(u *update) quoteLatestResponse {
+	result := quoteLatestResponse{
+		Pair:  currencyPairString(u.Base, u.Quote),
+		Price: u.Price,
 	}
 
 	if u.UpdatedAt != nil {

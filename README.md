@@ -10,15 +10,44 @@ fetching currency exchange rates. It uses
 to fetch the latest exchange rates. Only `USD`, `EUR`, and `MXN` currencies are
 supported.
 
+Original assignment in Russian is at [ASSIGNMENT.md](./ASSIGNMENT.md)
+
 ### Client flow
 
-- Client requests an update via `POST /update?pair=XXX/YYY`. It must include the
-  'Idempotency-Key' header with a valid UUIDv4 value. The JSON body returns
-  'updateId'.
-- Client can request their exchange rate via GET /quote/:updateId. The response
-  can report multiple states, such as pending, completed, or failed.
-- The latest known value of any supported pair can be fetched with
-  `GET /quote/latest?pair=XXX/YYY`
+Client requests an update via `POST /update?pair=XXX/YYY`. It must include the
+'Idempotency-Key' header with a valid UUIDv4 value. Example response:
+
+```json
+{
+  "updateId": "d04a832f-ec15-4bd0-b5f9-b9e7f2555c26",
+  "pair": "MXN/EUR"
+}
+```
+
+Client can request their exchange rate via `GET /quote/:updateId`. The response
+can report multiple states, such as `pending`, `completed`, or `failed`. Example
+response:
+
+```json
+{
+  "updateId": "d04a832f-ec15-4bd0-b5f9-b9e7f2555c26",
+  "pair": "MXN/EUR",
+  "status": "completed",
+  "price": 0.050543762432186064,
+  "updatedAt": "2026-08-27T10:29:04Z"
+}
+```
+
+The latest known value of any supported pair can be requested with
+`GET /quote/latest?pair=XXX/YYY`. Example response:
+
+```json
+{
+  "pair": "EUR/USD",
+  "price": 1.164578,
+  "updatedAt": "2026-08-27T10:29:04Z"
+}
+```
 
 ## How to run
 
@@ -28,7 +57,7 @@ supported.
   [exchangeratesapi.io dashboard](https://manage.exchangeratesapi.io/dashboard).
 - Run `docker compose up`. Check API health with
   `curl http://localhost:3000/health`
-- (Optional) Run simple e2e tests with Node with `node minie2e.js`
+- Run simple e2e tests with Node with `node minie2e.js`
 
 ## Internals
 

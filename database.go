@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-type apiDatabase interface {
+type serverDatabase interface {
 	// upserts the update based on idempotency key, returns update id.
 	upsertUpdate(ctx context.Context, update *upsertUpdate) (string, error)
 	getUpdateById(ctx context.Context, id string) (*update, error)

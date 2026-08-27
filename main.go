@@ -7,9 +7,6 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
-
-	"github.com/labstack/echo/v5"
 )
 
 const batchSize = 3
@@ -47,15 +44,8 @@ func run() error {
 	cleanupWorker := newCleanupWorker(logger, db, cfg.WorkerPollInterval, cfg.StaleUpdateDuration)
 	go cleanupWorker.Run(ctx)
 
-	e := newHTTPServer(logger, api, db)
-	sc := echo.StartConfig{
-		Address:         fmt.Sprintf(":%d", cfg.Port),
-		GracefulTimeout: 10 * time.Second,
-		HideBanner:      true,
-	}
-	if err := sc.Start(ctx, e); err != nil {
-		return fmt.Errorf("server failed to start: %w", err)
-	}
+	server := newServer(logger, db)
+	server.Run(ctx, cfg.Port)
 
 	return nil
 }

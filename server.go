@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"time"
@@ -12,9 +14,12 @@ import (
 
 var errorResponseInternalError = errorResponse{Error: "Internal error"}
 
+type server struct {
+	e *echo.Echo
+}
+
 type handler struct {
-	exchangeRateClient exchangeRateClient
-	apiDatabase        apiDatabase
+	db serverDatabase
 }
 
 type errorResponse struct {
@@ -32,10 +37,9 @@ type quoteResponse struct {
 	UpdatedAt *string  `json:"updatedAt"`
 }
 
-func newHTTPServer(logger *slog.Logger, api exchangeRateClient, db apiDatabase) *echo.Echo {
+func newServer(logger *slog.Logger, db serverDatabase) *server {
 	h := &handler{
-		exchangeRateClient: api,
-		apiDatabase:        db,
+		db: db,
 	}
 
 	e := echo.New()
@@ -51,10 +55,18 @@ func newHTTPServer(logger *slog.Logger, api exchangeRateClient, db apiDatabase) 
 	e.GET("/quote/latest", h.getLatest)
 	e.GET("/quote/:updateId", h.getByUpdateId)
 
-	// ugly and quick integration tests
-	e.GET("/test/api", h.testApi)
+	return &server{
+		e: e,
+	}
+}
 
-	return e
+func (s *server) Run(ctx context.Context, port int) error {
+	sc := echo.StartConfig{
+		Address:         fmt.Sprintf(":%d", port),
+		GracefulTimeout: 10 * time.Second,
+		HideBanner:      true,
+	}
+	return sc.Start(ctx, s.e)
 }
 
 func (h *handler) update(c *echo.Context) error {
@@ -73,7 +85,7 @@ func (h *handler) update(c *echo.Context) error {
 		})
 	}
 
-	updateId, err := h.apiDatabase.upsertUpdate(c.Request().Context(), &upsertUpdate{
+	updateId, err := h.db.upsertUpdate(c.Request().Context(), &upsertUpdate{
 		IdempotencyKey: idempotencyKey,
 		Base:           base,
 		Quote:          quote,
@@ -97,7 +109,7 @@ func (h *handler) getLatest(c *echo.Context) error {
 		})
 	}
 
-	update, err := h.apiDatabase.getUpdateLatest(c.Request().Context(),
+	update, err := h.db.getUpdateLatest(c.Request().Context(),
 		base, quote)
 	if err != nil {
 		c.Logger().Error("failed to get latest", "error", err)
@@ -118,7 +130,7 @@ func (h *handler) getByUpdateId(c *echo.Context) error {
 		return c.JSON(http.StatusBadRequest, errorResponse{Error: "Invalid update ID"})
 	}
 
-	update, err := h.apiDatabase.getUpdateById(c.Request().Context(), updateId)
+	update, err := h.db.getUpdateById(c.Request().Context(), updateId)
 	if err != nil {
 		c.Logger().Error("failed to get by id", "error", err)
 		return c.JSON(http.StatusInternalServerError, errorResponseInternalError)
@@ -129,16 +141,6 @@ func (h *handler) getByUpdateId(c *echo.Context) error {
 		})
 	}
 	return c.JSON(http.StatusOK, updateToQuoteResult(update))
-}
-
-func (h *handler) testApi(c *echo.Context) error {
-	snapshot, err := h.exchangeRateClient.latestSnapshot(
-		c.Request().Context(), []string{"USD", "MXN"})
-	slog.Info("api test", "snapshot", snapshot, "err", err)
-	if err != nil {
-		return c.String(http.StatusInternalServerError, "not ok")
-	}
-	return c.String(http.StatusOK, "ok")
 }
 
 func updateToQuoteResult(u *update) quoteResponse {

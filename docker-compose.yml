@@ -19,7 +19,7 @@ services:
       DATABASE_URL: postgres://plata:plata@plata-postgres:5432/plata?sslmode=disable
       EXCHANGERATESAPI_KEY: ${EXCHANGERATESAPI_KEY}
       WORKER_POLL_INTERVAL: ${WORKER_POLL_INTERVAL}
-      PORT: ${PORT}
+      STALE_UPDATE_DURATION: ${STALE_UPDATE_DURATION}
     depends_on:
       plata-postgres:
         condition: service_healthy

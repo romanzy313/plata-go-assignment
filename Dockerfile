@@ -15,5 +15,7 @@ WORKDIR /app
 
 COPY --from=build /plata-go-assignment /plata-go-assignment
 
+ENV PORT=3000
 EXPOSE 3000
+
 ENTRYPOINT ["/plata-go-assignment"]

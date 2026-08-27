@@ -98,7 +98,8 @@ VALUES (
   $3,
   'pending'
 )
-ON CONFLICT (idempotency_key) DO NOTHING
+ON CONFLICT (idempotency_key) DO UPDATE
+SET idempotency_key = EXCLUDED.idempotency_key
 RETURNING id::text;`, update.IdempotencyKey, update.Base, update.Quote).Scan(&id)
 	if err != nil {
 		return "", err

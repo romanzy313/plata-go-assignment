@@ -20,8 +20,12 @@ async function run(index) {
   if (!ok) {
     throw Error("failed to update");
   }
-
   const updateId = data.updateId;
+
+  [ok, data] = await newUpdate(idempotencyKey, pair);
+  if (!ok || updateId != data.updateId) {
+    throw Error("idempotent update failed");
+  }
 
   [ok, data] = await getLatest(pair);
   console.log(index, "latest", data);

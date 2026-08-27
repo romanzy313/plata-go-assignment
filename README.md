@@ -12,7 +12,17 @@ supported.
 
 Original assignment in Russian is at [ASSIGNMENT.md](./ASSIGNMENT.md)
 
-### Client flow
+## How to run
+
+- Have Docker installed.
+- Copy example environment variables with `cp .env.example .env`. Make sure to
+  populate `EXCHANGERATESAPI_KEY` with a value from the
+  [exchangeratesapi.io dashboard](https://manage.exchangeratesapi.io/dashboard).
+- Run `docker compose up --build`. Check API health with
+  `curl http://localhost:3000/health`
+- Run simple e2e tests with Node with `node minie2e.js`
+
+## Client flow
 
 Client requests an update via `POST /update?pair=XXX/YYY`. It must include the
 'Idempotency-Key' header with a valid UUIDv4 value. Example response:
@@ -48,16 +58,6 @@ The latest known value of any supported pair can be requested with
   "updatedAt": "2026-08-27T10:29:04Z"
 }
 ```
-
-## How to run
-
-- Have Docker installed.
-- Copy example environment variables with `cp .env.example .env`. Make sure to
-  populate `EXCHANGERATESAPI_KEY` with a value from the
-  [exchangeratesapi.io dashboard](https://manage.exchangeratesapi.io/dashboard).
-- Run `docker compose up`. Check API health with
-  `curl http://localhost:3000/health`
-- Run simple e2e tests with Node with `node minie2e.js`
 
 ## Internals
 

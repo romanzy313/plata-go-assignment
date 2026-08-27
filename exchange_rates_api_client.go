@@ -62,6 +62,7 @@ func newExchangeratesapiClient(apiKey string) *exchangeratesapiClient {
 
 func (c *exchangeratesapiClient) latestSnapshot(ctx context.Context, symbols []string) (*rateSnapshot, error) {
 	res, err := c.client.R().
+		SetContext(ctx).
 		SetQueryParams(map[string]string{
 			"access_key": c.apiKey,
 			"base":       exchangeratesapiBaseCurrency,

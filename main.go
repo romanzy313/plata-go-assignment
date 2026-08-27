@@ -45,7 +45,5 @@ func run() error {
 	go cleanupWorker.Run(ctx)
 
 	server := newServer(logger, db)
-	server.Run(ctx, cfg.Port)
-
-	return nil
+	return server.Run(ctx, cfg.Port)
 }

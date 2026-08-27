@@ -101,7 +101,7 @@ func (w *updateWorker) Process(ctx context.Context) (bool, error) {
 	}
 
 	successfulUpdates := make([]*successfulUpdate, 0, len(pendingUpdates))
-	failedUpdateIds := make([]string, 0)
+	failedUpdateIds := make([]string, 0, len(pendingUpdates))
 
 	w.logger.Debug("processing updates", "count", len(pendingUpdates))
 
@@ -122,7 +122,7 @@ func (w *updateWorker) Process(ctx context.Context) (bool, error) {
 		return false, fmt.Errorf("failed to get exchange rates: %w", err)
 	}
 
-	var lastError error
+	var calculateErr error
 	for _, pending := range pendingUpdates {
 		rate, err := calculateExchangeRate(
 			snapshot,
@@ -131,7 +131,7 @@ func (w *updateWorker) Process(ctx context.Context) (bool, error) {
 		)
 		if err != nil {
 			failedUpdateIds = append(failedUpdateIds, pending.Id)
-			lastError = err
+			calculateErr = err
 			continue
 		}
 
@@ -154,7 +154,7 @@ func (w *updateWorker) Process(ctx context.Context) (bool, error) {
 		"update results",
 		"successes", len(successfulUpdates),
 		"failures", len(failedUpdateIds),
-		"calculationErr", lastError,
+		"calculationErr", calculateErr,
 	)
 
 	return true, nil
